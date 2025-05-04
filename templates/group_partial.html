@@ -1,0 +1,114 @@
+<!-- Group Chat Section -->
+<div id="groups-content" class="hidden">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl">Your Groups</h2>
+        <button id="create-group-btn" class="bg-blue-500 text-white px-3 py-1 rounded-full flex items-center">
+            <span class="material-icons text-sm mr-1">add</span>
+            New Group
+        </button>
+    </div>
+    
+    <ul id="user-groups" class="space-y-1">
+        <!-- Groups will be listed here -->
+        <li class="text-gray-500 p-2">Loading groups...</li>
+    </ul>
+    
+    <!-- Create Group Modal -->
+    <div id="create-group-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-lg shadow-lg w-96 max-w-full">
+            <h3 class="text-xl mb-4">Create New Group</h3>
+            <form id="create-group-form">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="group-name">
+                        Group Name
+                    </label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700" 
+                           id="group-name" type="text" placeholder="Enter group name" required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">
+                        Add Members
+                    </label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-2" 
+                           id="member-search" type="text" placeholder="Search users to add">
+                    <div id="search-results" class="max-h-32 overflow-y-auto"></div>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">
+                        Selected Members
+                    </label>
+                    <div id="selected-members" class="border rounded p-2 min-h-10 max-h-32 overflow-y-auto">
+                        <!-- Selected members will appear here -->
+                    </div>
+                </div>
+                <div class="flex items-center justify-between">
+                    <button type="button" id="cancel-create-group" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded">
+                        Cancel
+                    </button>
+                    <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                        Create Group
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Group Info Modal -->
+    <div id="group-info-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-lg shadow-lg w-96 max-w-full">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl" id="group-info-title">Group Info</h3>
+                <button id="close-group-info" class="text-gray-500 hover:text-gray-700">
+                    <span class="material-icons">close</span>
+                </button>
+            </div>
+            <div id="group-info-content">
+                <!-- Group info will appear here -->
+            </div>
+            <div class="mt-4 pt-4 border-t" id="group-members-section">
+                <h4 class="font-bold mb-2">Members</h4>
+                <ul id="group-members-list" class="space-y-2">
+                    <!-- Members will be listed here -->
+                </ul>
+            </div>
+            <div class="mt-4 pt-4 border-t" id="group-actions">
+                <button id="add-member-btn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2">
+                    Add Member
+                </button>
+                <button id="leave-group-btn" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+                    Leave Group
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Group Chat Area -->
+<div id="group-chat-container" class="hidden">
+    <div id="group-chat-header" class="flex items-center justify-between mb-4 p-3 border-b">
+        <div class="flex items-center">
+            <div class="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center mr-3 text-white">
+                <span id="group-avatar-placeholder" class="font-bold">G</span>
+            </div>
+            <div>
+                <h2 id="group-chat-name" class="text-xl">Group Name</h2>
+                <p id="group-member-count" class="text-sm text-gray-600">0 members</p>
+            </div>
+        </div>
+        <button id="group-info-btn" class="text-gray-500 hover:text-gray-700">
+            <span class="material-icons">info</span>
+        </button>
+    </div>
+
+    <div id="group-chat-area" class="h-4/6 overflow-y-auto border p-4 bg-gray-50 mb-4 rounded">
+        <!-- Group chat messages will appear here -->
+        <div class="flex items-center justify-center h-full text-gray-500">
+            Select a group to start chatting
+        </div>
+    </div>
+    
+    <div class="flex mt-4">
+        <input id="group-message-input" class="w-full p-3 border rounded" type="text" placeholder="Type a message..." onkeypress="sendGroupMessage(event)" disabled>
+        <button id="send-group-button" onclick="sendGroupMessage({ key: 'Enter' })" class="ml-2 p-3 bg-blue-500 text-white rounded" disabled>Send</button>
+    </div>
+</div>

@@ -1,10 +1,121 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+  <meta charset="UTF-8" />
+  <title>Whisp - Login</title>
+  <style>
+    * {
+      margin: 0; padding: 0; box-sizing: border-box;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    html, body {
+      height: 100%;
+      background: url("/static/bg.png") no-repeat center center/cover;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .login-card {
+      width: 360px;
+      padding: 32px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.3);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    }
+    .login-card h2 {
+      text-align: center;
+      margin-bottom: 24px;
+      color: #203a43;
+      font-size: 24px;
+    }
+    .input-group { margin-bottom: 18px; }
+    .input-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+      color: #203a43;
+    }
+    .input-group input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #203a43;
+      border-radius: 8px;
+      font-size: 15px;
+      color: #203a43;
+      background: rgba(255,255,255,0.8);
+      transition: border-color .3s, box-shadow .3s;
+    }
+    .input-group input::placeholder {
+      color: #58636b;
+    }
+    .input-group input:focus {
+      outline: none;
+      border-color: #0096c7;
+      box-shadow: 0 0 6px #0096c788;
+    }
+    .btn {
+      width: 100%;
+      padding: 12px;
+      background: #0096c7;
+      color: #fff;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background .3s ease;
+      margin-top: 8px;
+    }
+    .btn:hover { background: #0077a3; }
+    .extra {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 14px;
+      color: #e0eafc;
+    }
+    .extra a {
+      color: #203a43;
+      text-decoration: none;
+    }
+    .extra a:hover { text-decoration: underline; }
+    .home-icon {
+      position: absolute;
+      top: 24px; left: 24px;
+      padding: 6px; border-radius: 10px;
+      background: rgba(8,8,8,0.07);
+      transition: background .3s;
+      display: flex; align-items: center;
+    }
+    .home-icon:hover { background: rgba(0,0,0,0.15); }
+    .home-icon svg {
+      width: 24px; height: 24px;
+      fill: #203a43; stroke-width:1;
+    }
+  </style>
 </head>
 <body>
+  <a href="/" class="home-icon" title="Home">
+    <svg viewBox="0 0 24 24">
+      <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+    </svg>
+  </a>
 
+  <div class="login-card">
+    <h2>Welcome to Whisp</h2>
+    <form method="POST">
+      <div class="input-group">
+        <label for="email">Email</label>
+        <input id="email" type="email" name="email" placeholder="you@example.com" required />
+      </div>
+      <div class="input-group">
+        <label for="password">Password</label>
+        <input id="password" type="password" name="password" placeholder="••••••••" required />
+      </div>
+      <button type="submit" class="btn">Log In</button>
+    </form>
+    
+    <div class="extra">
+      Don't have an account? <a href="/signup">Sign Up</a>
+    </div>
+  </div>
 </body>
 </html>

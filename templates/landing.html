@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Whisp</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            height: 100dvh;
+            padding-left: 80px;
+            position: relative;
+        }
+
+        .top-bar {
+            position: absolute;
+            top: 20px;
+            right: 40px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            margin-left: 10px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+
+        
+
+        .logo {
+            width: 180px;
+            height: auto;
+        }
+
+        .tagline {
+            margin-top: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .typewriter-container {
+            margin-bottom: 100px;
+            position: relative;
+            height: 30px;
+            white-space: nowrap; /* Prevent text wrapping */
+        }
+
+        #typewriter {
+            position: relative;
+            font-size: 24px;
+            font-weight: bold;
+            color: #fff;
+            display: inline; /* Ensures the text stays in a single line */
+        }
+
+        #typewriter::after {
+            content: "|";
+            position: absolute;
+            right: -10px;
+            color: #fff;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+    </style>
+    <script>
+        // Wait until the document is fully loaded
+        document.addEventListener("DOMContentLoaded", function() {
+            // Words to be displayed
+            const words = ["Secure", "Versatile", "Robust", "Seamless"];
+            const typewriter = document.getElementById("typewriter");
+            
+            let wordIndex = 0;
+            let charIndex = 0;
+            let isDeleting = false;
+            let isWaiting = false;
+            
+            // Main function that handles the typewriter effect
+            function type() {
+                const currentWord = words[wordIndex];
+                
+                if (isDeleting) {
+                    // Remove a character
+                    typewriter.textContent = currentWord.substring(0, charIndex - 1);
+                    charIndex--;
+                } else {
+                    // Add a character
+                    typewriter.textContent = currentWord.substring(0, charIndex + 1);
+                    charIndex++;
+                }
+                
+                // Check if word is complete
+                if (!isDeleting && charIndex === currentWord.length) {
+                    // Word is complete, wait and then delete
+                    isWaiting = true;
+                    isDeleting = true;
+                    setTimeout(type, 1500); // Wait before deleting
+                    return;
+                }
+                
+                // Check if deletion is complete
+                if (isDeleting && charIndex === 0) {
+                    isDeleting = false;
+                    // Move to next word
+                    wordIndex = (wordIndex + 1) % words.length;
+                    setTimeout(type, 500); // Wait before typing next word
+                    return;
+                }
+                
+                // Set typing/deleting speed
+                const typingSpeed = isDeleting ? 80 : 150;
+                
+                // Continue typing or deleting
+                setTimeout(type, typingSpeed);
+            }
+            
+            // Start the typewriter effect
+            setTimeout(type, 1000);
+        });
+    </script>
+</head>
+<body>
+    <!-- Inside top-bar div -->
+<div class="top-bar">
+    <a href="/login"><button class="btn">Log In</button></a>
+    <a href="/signup"><button class="btn">Sign Up</button></a>
+</div>
+
+
+    <div class="logo-container">
+        <img src="/static/images/whisp.png" alt="Whisp Logo" class="logo">
+    </div>
+
+    <p class="tagline">Where messaging meets efficiency</p>
+
+    <div class="typewriter-container">
+        <span id="typewriter"></span>
+    </div>
+</body>
+</html>

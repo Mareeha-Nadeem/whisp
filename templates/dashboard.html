@@ -2,14 +2,316 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat App</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.2/socket.io.min.js"></script>
+    <link href="/static/navbar.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        .sidebar {
+            width: 300px;
+            background-color: #f3f4f6;
+            border-right: 1px solid #e5e7eb;
+        }
+        .slim-navbar {
+            width: 70px;
+            background-color: #4b5563;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem 0;
+        }
+        .logo {
+            width: 40px;
+            height: 40px;
+            background-color: #3b82f6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-bottom: 2rem;
+        }
+        .slim-navbar a {
+            padding: 0.75rem;
+            border-radius: 50%;
+            margin-bottom: 1rem;
+            transition: background-color 0.3s;
+        }
+        .slim-navbar a:hover, .slim-navbar a.active {
+            background-color: #3b82f6;
+        }
+        .chat-entry {
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .chat-entry:hover {
+            background-color: #e5e7eb;
+        }
+        .chat-preview {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 200px;
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+        .chat-time {
+            font-size: 0.75rem;
+            color: #9ca3af;
+        }
+    </style>
 </head>
-<body>
-    <header>
-        <img src="{{ user_logo }}" alt="User Logo" width="50" height="50">
-        <h1>Welcome to the Dashboard</h1>
-    </header>
+<body class="bg-gray-100">
+    <div class="flex h-screen">
+        <!-- Left Navbar -->
+        <div class="slim-navbar">
+            <div class="logo">W</div>
+            <a href="#" class="active">
+                <span class="material-icons">chat</span>
+            </a>
+            <a href="#">
+                <span class="material-icons">group</span>
+            </a>
+            <a href="#">
+                <span class="material-icons">call</span>
+            </a>
+            <a href="#" style="margin-top: auto;">
+                <span class="material-icons">settings</span>
+            </a>
+            <a href="/logout">
+                <span class="material-icons">exit_to_app</span>
+            </a>
+        </div>
+        
+        <!-- Sidebar Content -->
+        <div class="sidebar p-4">
+            <h2 class="text-xl mb-4">Welcome {{ current_user_name }}</h2>
+            <input id="search-bar" class="w-full p-2 mb-4 border rounded" type="text" placeholder="Search users..." onkeyup="searchUsers()">
+            <h3 class="text-lg font-medium mb-2">Recent Chats</h3>
+            <ul id="recent-chats" class="space-y-1">
+                <!-- Recent chats will appear here -->
+            </ul>
+        </div>
 
-    <p>Here is the content of your dashboard.</p>
+        <!-- Middle Content -->
+        <div class="w-2/4 p-4 bg-white">
+            <div id="chat-header" class="flex items-center mb-4 p-3 border-b">
+                <div class="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center mr-3">
+                    <span id="avatar-placeholder" class="text-gray-600 font-bold">?</span>
+                </div>
+                <h2 id="chat-username" class="text-xl">Select a chat</h2>
+            </div>
+
+            <div id="chat-area" class="h-4/6 overflow-y-auto border p-4 bg-gray-50 mb-4 rounded">
+                <!-- Active chat messages will appear here -->
+                <div class="flex items-center justify-center h-full text-gray-500">
+                    Select a conversation to start chatting
+                </div>
+            </div>
+            <div class="flex mt-4">
+                <input id="message-input" class="w-full p-3 border rounded" type="text" placeholder="Type a message..." onkeypress="sendMessage(event)" disabled>
+                <button id="send-button" onclick="sendMessage({ key: 'Enter' })" class="ml-2 p-3 bg-blue-500 text-white rounded" disabled>Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io.connect();
+        let activeReceiverEmail = null;
+
+        // Send message
+        function sendMessage(event) {
+            if (event.key === 'Enter') {
+                const message = document.getElementById('message-input').value;
+                if (!activeReceiverEmail || !message.trim()) return;
+
+                fetch('/send_message', {
+                    method: 'POST',
+                    body: new URLSearchParams({
+                        'receiver_id': activeReceiverEmail,
+                        'message_body': message
+                    }),
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+                }).then(response => response.json()).then(data => {
+                    if (data.success) {
+                        document.getElementById('message-input').value = '';
+                        appendMessage('You', message);
+                        // Reload recent chats to update the list with the new message
+                        loadRecentChats();
+                    }
+                });
+            }
+        }
+
+        // Format the timestamp into a readable format
+        function formatTime(isoString) {
+            if (!isoString) return '';
+            
+            const date = new Date(isoString);
+            const now = new Date();
+            
+            // Check if the message is from today
+            if (date.toDateString() === now.toDateString()) {
+                return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            }
+            
+            // Check if the message is from yesterday
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            if (date.toDateString() === yesterday.toDateString()) {
+                return 'Yesterday';
+            }
+            
+            // For older messages, show the date
+            return date.toLocaleDateString();
+        }
+
+        // Append a message to chat area
+        function appendMessage(sender, message) {
+            const chatArea = document.getElementById('chat-area');
+            
+            // Clear the placeholder if it exists
+            if (chatArea.querySelector('div.flex.items-center.justify-center')) {
+                chatArea.innerHTML = '';
+            }
+            
+            const messageElement = document.createElement('div');
+            messageElement.className = `mb-3 ${sender === 'You' ? 'text-right' : ''}`;
+            
+            const messageContent = document.createElement('div');
+            messageContent.className = `inline-block p-3 rounded-lg ${sender === 'You' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`;
+            messageContent.textContent = message;
+            
+            messageElement.appendChild(messageContent);
+            chatArea.appendChild(messageElement);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        // Listen for incoming messages
+        socket.on('new_message', function(data) {
+            if (activeReceiverEmail && (data.sender === activeReceiverEmail || data.receiver === activeReceiverEmail)) {
+                const senderName = data.sender === activeReceiverEmail ? data.sender_name : 'You';
+                appendMessage(senderName, data.message);
+                // Reload recent chats to update the list with the new message
+                loadRecentChats();
+            }
+        });
+
+        // Search and list users
+        function searchUsers() {
+            const query = document.getElementById('search-bar').value;
+            fetch(`/search_users?query=${query}`)
+                .then(response => response.json())
+                .then(data => {
+                    const recentChats = document.getElementById('recent-chats');
+                    recentChats.innerHTML = '';
+                    data.users.forEach(user => {
+                        const userElement = document.createElement('li');
+                        userElement.innerHTML = `
+                            <div class="chat-entry" onclick="openChat('${user.email}', '${user.username}')">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center mr-3">
+                                        <span class="text-gray-600 font-bold">${user.username.charAt(0).toUpperCase()}</span>
+                                    </div>
+                                    <div>
+                                        <div class="font-medium">${user.username}</div>
+                                        <div class="chat-preview">Start a new conversation</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        recentChats.appendChild(userElement);
+                    });
+                });
+        }
+
+        // Open chat with selected user
+        function openChat(email, username) {
+            activeReceiverEmail = email;
+            updateChatHeader(username);
+            
+            // Enable message input and send button
+            document.getElementById('message-input').disabled = false;
+            document.getElementById('send-button').disabled = false;
+
+            fetch(`/get_messages/${email}`)
+                .then(response => response.json())
+                .then(data => {
+                    const chatArea = document.getElementById('chat-area');
+                    chatArea.innerHTML = '';
+                    data.messages.forEach(msg => {
+                        const sender = msg.sender_id === email ? username : 'You';
+                        appendMessage(sender, msg.message_body);
+                    });
+                    
+                    // Show placeholder if no messages
+                    if (data.messages.length === 0) {
+                        chatArea.innerHTML = `
+                            <div class="flex items-center justify-center h-full text-gray-500">
+                                No messages yet. Start a conversation!
+                            </div>
+                        `;
+                    }
+                });
+        }
+        
+        function loadRecentChats() {
+            fetch('/get_recent_chats')
+                .then(response => response.json())
+                .then(data => {
+                    const recentChats = document.getElementById('recent-chats');
+                    recentChats.innerHTML = ''; // Clear the list before adding new items
+                    
+                    if (data.chats && data.chats.length > 0) {
+                        data.chats.forEach(chat => {
+                            const formattedTime = formatTime(chat.last_message_time);
+                            const truncatedMessage = chat.last_message.length > 30 ? 
+                                chat.last_message.substring(0, 30) + '...' : chat.last_message;
+                            
+                            const chatElement = document.createElement('li');
+                            chatElement.innerHTML = `
+                                <div class="chat-entry" onclick="openChat('${chat.email}', '${chat.username}')">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center mr-3">
+                                                <span class="text-gray-600 font-bold">${chat.username.charAt(0).toUpperCase()}</span>
+                                            </div>
+                                            <div>
+                                                <div class="font-medium">${chat.username}</div>
+                                                <div class="chat-preview">${truncatedMessage}</div>
+                                            </div>
+                                        </div>
+                                        <span class="chat-time">${formattedTime}</span>
+                                    </div>
+                                </div>
+                            `;
+                            recentChats.appendChild(chatElement);
+                        });
+                    } else {
+                        recentChats.innerHTML = `
+                            <li class="text-gray-500 p-2">
+                                No recent chats. Search for users to start chatting!
+                            </li>
+                        `;
+                    }
+                });
+        }
+
+        // Update chat header
+        function updateChatHeader(username) {
+            document.getElementById('chat-username').textContent = username;
+            const avatarPlaceholder = document.getElementById('avatar-placeholder');
+            avatarPlaceholder.textContent = username.charAt(0).toUpperCase();
+        }
+
+        // Call the function when the page loads
+        window.onload = loadRecentChats;
+    </script>
 </body>
 </html>

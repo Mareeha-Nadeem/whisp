@@ -1,0 +1,60 @@
+/* Slim Left Navbar */
+.slim-navbar {
+  width: 60px; /* Slim width */
+  height: 100vh; /* Full height */
+  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); /* Gradient background */
+  position: fixed;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 20px;
+}
+
+.slim-navbar .logo {
+  color: white;
+  font-size: 24px;
+  margin-bottom: 40px;
+  font-weight: bold;
+}
+
+.slim-navbar a {
+  color: white;
+  font-size: 24px;
+  margin: 20px 0;
+  text-decoration: none;
+  display: block;
+}
+
+.slim-navbar a:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  
+}
+
+.slim-navbar .material-icons {
+  font-size: 20px;
+}
+
+.slim-navbar a.active {
+  background-color: rgba(255, 255, 255, 0.3); /* Active link highlight */
+}
+
+/* Sidebar styling */
+.sidebar {
+  background: linear-gradient(135deg, #203a43, rgba(255,255,255,0.3)); /* Gradient background */
+  padding: 16px;  /* Padding for spacing */
+  margin-left: 60px; /* Left margin for the sidebar */
+  color: white; /* Text color */
+  height: 100vh; /* Full screen height */
+}
+
+/* Optional: Adjust text color for the sidebar content */
+.sidebar h2 {
+  color: white;
+}
+
+.sidebar input {
+  background-color: #203a43;
+  color: white;
+}

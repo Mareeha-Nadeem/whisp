@@ -1,27 +1,73 @@
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
 from db.mongo_manager import get_db
 
 class User:
-    def __init__(self, username, password):
+    def __init__(self, username, email, password=""):
         self.username = username
+        self.email = email
         self.password = password
 
-    def save_to_db(self):
+    def create(self):
         db = get_db()
-        users_collection = db['users']
+
+        existing_user = db.users.find_one({"email": self.email})
+        if existing_user:
+            return False
+
         hashed_password = generate_password_hash(self.password)
-        users_collection.insert_one({
+        user_data = {
             "username": self.username,
-            "password": hashed_password
-        })
+            "email": self.email,
+            "password": hashed_password,
+            "created_at": datetime.utcnow(),
+            "is_active": True
+        }
+        db.users.insert_one(user_data)
+        return True
 
     @staticmethod
-    def find_by_username(username):
+    def validate(email, password):
         db = get_db()
-        users_collection = db['users']
-        user_data = users_collection.find_one({"username": username})
-        return user_data
+        user = db.users.find_one({"email": email})
+        if user and check_password_hash(user['password'], password):
+            return True
+        return False
 
     @staticmethod
-    def verify_password(stored_password, provided_password):
-        return check_password_hash(stored_password, provided_password)
+    def get_by_email(email):
+        """
+        Get a user by email and return a User object
+        """
+        db = get_db()
+        user_data = db.users.find_one({"email": email})
+        if user_data:
+            return User(user_data["username"], user_data["email"])
+        return None
+
+    @staticmethod
+    def get_all_users():
+        """
+        Get all users from the database
+        """
+        db = get_db()
+        users = []
+        for user in db.users.find():
+            users.append(User(user["username"], user["email"]))
+        return users
+
+    @staticmethod
+    def search_by_username(query, exclude_email=None):
+        """
+        Search for users by username
+        Optionally exclude a user by email (typically the current user)
+        """
+        db = get_db()
+        search_filter = {
+            "username": {"$regex": query, "$options": "i"}
+        }
+        if exclude_email:
+            search_filter["email"] = {"$ne": exclude_email}
+
+        found_users = db.users.find(search_filter)
+        return [User(user["username"], user["email"]) for user in found_users]

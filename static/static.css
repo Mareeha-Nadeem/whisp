@@ -1,0 +1,117 @@
+/* signup  */
+     * {
+      margin: 0; padding: 0; box-sizing: border-box;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    html, body {
+      height: 100%;
+      background: url("/static/bg.png") no-repeat center center/cover;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .signup-card {
+      width: 360px;
+      padding: 32px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.3);
+      backdrop-filter: blur(12px);
+      /* subtle glow */
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    }
+    .signup-card h2 {
+      text-align: center;
+      margin-bottom: 24px;
+      color:  #203a43;
+      font-size: 24px;
+    }
+    .input-group { margin-bottom: 18px; }
+    .input-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+      color:  #203a43;
+    }
+    .input-group input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #203a43;
+      border-radius: 8px;
+      font-size: 15px;
+      color: #203a43;
+      background: rgba(255, 255, 255, 0.361);
+      transition: border-color .3s, box-shadow .3s;
+    }
+    .input-group input::placeholder {
+      color: #58636b;
+    }
+    .input-group input:focus {
+      outline: none;
+      border-color: #0096c7;
+      box-shadow: 0 0 6px #0096c788;
+    }
+    .btn {
+      width: 100%;
+      padding: 12px;
+      background: #0077ffe2;
+      color:  #b5e1f0;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background .3s ease;
+      margin-top: 8px;
+    }
+    .btn:hover { background: #0077a3; }
+    .extra {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 14px;
+      color: #e0eafc;
+    }
+    .extra a {
+      color:  #203a43;
+      text-decoration: none;
+    }
+    .extra a:hover { text-decoration: underline; }
+    .home-icon {
+      position: absolute;
+      top: 24px; left: 24px;
+      padding: 6px; border-radius: 10px;
+      background: rgba(8, 8, 8, 0.073);
+      transition: background .3s;
+      display: flex; align-items: center;
+    }
+    .home-icon:hover { background: rgba(0,0,0,0.3); }
+    .home-icon svg {
+      width: 24px; height: 24px;
+      fill:  #203a43; stroke-width:1;
+    }
+    .flash {
+      margin-bottom: 16px;
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: bold;
+      text-align: center;
+    }
+    .flash.success { background: #d4eddae0; color: #155724; }
+    .flash.error { background: #f8d7dadf; color: #721c24; }
+ 
+/* login */
+
+    .login-card {
+      width: 360px;
+      padding: 32px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.3);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    }
+    .login-card h2 {
+      text-align: center;
+      margin-bottom: 24px;
+      color: #203a43;
+      font-size: 24px;
+    }
+    

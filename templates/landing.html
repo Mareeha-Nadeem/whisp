@@ -2,26 +2,38 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Whisp</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whisp - Where Messaging Meets Efficiency</title>
     <style>
+        /* Base styles */
         body {
             margin: 0;
             padding: 0;
             background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-            font-family: 'Segoe UI', sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            justify-content: center;
-            height: 100dvh;
-            padding-left: 80px;
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            min-height: 100vh;
             position: relative;
+            overflow-x: hidden;
+            color: white;
         }
 
+        /* Top navigation elements */
         .top-bar {
             position: absolute;
             top: 20px;
             right: 40px;
+            z-index: 10;
+        }
+
+        .top-left-logo {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            z-index: 10;
+        }
+
+        .top-left-logo img {
+            height: 40px;
         }
 
         .btn {
@@ -40,7 +52,27 @@
             background-color: #0056b3;
         }
 
-        
+        /* Main content layout */
+        .main-content {
+            display: flex;
+            height: 100vh;
+            width: 100%;
+        }
+
+        /* Left side content styles */
+        .left-content {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            padding-left: 100px;
+            box-sizing: border-box;
+        }
+
+        .logo-container {
+            margin-bottom: 20px;
+        }
 
         .logo {
             width: 180px;
@@ -55,25 +87,24 @@
         }
 
         .typewriter-container {
+            margin-top: 10px;
             margin-bottom: 100px;
             position: relative;
-            height: 30px;
-            white-space: nowrap; /* Prevent text wrapping */
+            height: 36px;
         }
 
         #typewriter {
-            position: relative;
             font-size: 24px;
             font-weight: bold;
-            color: #fff;
-            display: inline; /* Ensures the text stays in a single line */
+            color: #4db8ff;
         }
 
-        #typewriter::after {
-            content: "|";
-            position: absolute;
-            right: -10px;
-            color: #fff;
+        .cursor {
+            display: inline-block;
+            margin-left: 3px;
+            width: 2px;
+            height: 24px;
+            background-color: #fff;
             animation: blink 1s infinite;
         }
 
@@ -81,79 +112,578 @@
             0%, 100% { opacity: 1; }
             50% { opacity: 0; }
         }
-    </style>
-    <script>
-        // Wait until the document is fully loaded
-        document.addEventListener("DOMContentLoaded", function() {
-            // Words to be displayed
-            const words = ["Secure", "Versatile", "Robust", "Seamless"];
-            const typewriter = document.getElementById("typewriter");
+
+        /* Right side content styles */
+        .right-content {
+            width: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 40px;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        /* Slides container */
+        .slides-container {
+            width: 100%;
+            max-width: 400px;
+            height: 400px;
+            position: relative;
+            margin-top: 60px;
+        }
+
+        /* Message slide */
+        .message-slide {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            transition: transform 1s ease, opacity 1s ease;
+            display: flex;
+            flex-direction: column;
             
-            let wordIndex = 0;
-            let charIndex = 0;
-            let isDeleting = false;
-            let isWaiting = false;
-            
-            // Main function that handles the typewriter effect
-            function type() {
-                const currentWord = words[wordIndex];
-                
-                if (isDeleting) {
-                    // Remove a character
-                    typewriter.textContent = currentWord.substring(0, charIndex - 1);
-                    charIndex--;
-                } else {
-                    // Add a character
-                    typewriter.textContent = currentWord.substring(0, charIndex + 1);
-                    charIndex++;
-                }
-                
-                // Check if word is complete
-                if (!isDeleting && charIndex === currentWord.length) {
-                    // Word is complete, wait and then delete
-                    isWaiting = true;
-                    isDeleting = true;
-                    setTimeout(type, 1500); // Wait before deleting
-                    return;
-                }
-                
-                // Check if deletion is complete
-                if (isDeleting && charIndex === 0) {
-                    isDeleting = false;
-                    // Move to next word
-                    wordIndex = (wordIndex + 1) % words.length;
-                    setTimeout(type, 500); // Wait before typing next word
-                    return;
-                }
-                
-                // Set typing/deleting speed
-                const typingSpeed = isDeleting ? 80 : 150;
-                
-                // Continue typing or deleting
-                setTimeout(type, typingSpeed);
+        }
+
+        /* Globe slide */
+        .globe-slide {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            transition: transform 1s ease, opacity 1s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .hidden-slide {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .message-slide.hidden-slide {
+            transform: translateX(-100%);
+        }
+
+        .globe-slide.hidden-slide {
+            transform: translateX(100%);
+        }
+
+        .message-bubble {
+            max-width: 100%;
+            margin-bottom: 15px;
+            padding: 12px 16px;
+            border-radius: 18px;
+            position: relative;
+            transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            opacity: 0;
+            transform: translateY(20px) scale(0.9);
+        }
+
+        .message-bubble p {
+            margin: 0;
+            color: #fff;
+            font-size: 15px;
+            line-height: 1.4;
+        }
+
+        .message-bubble .timestamp {
+            display: block;
+            font-size: 11px;
+            margin-top: 5px;
+            opacity: 0.7;
+            color: #fff;
+        }
+
+        .message-bubble.animate {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        .incoming {
+            background-color: rgba(0, 123, 255, 0.8);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+            margin-right: auto;
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+        }
+
+        .outgoing {
+            background-color: rgba(27, 108, 73, 0.8);
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+            margin-left: auto;
+            box-shadow: 0 4px 15px rgba(87, 188, 144, 0.3);
+        }
+
+        /* Globe rotating animation */
+        .globe-container {
+            width: 320px;
+            height: 320px;
+            position: relative;
+        }
+
+        .rotating-globe {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            position: relative;
+            animation: rotate 30s linear infinite;
+        }
+
+        .globe-segment {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform-origin: 0 0;
+            color: rgba(77, 184, 255, 0.7);
+            font-size: 10px;
+            width: 300px;
+            text-align: center;
+        }
+
+        /* Fixed achievement size and styling */
+        .achievement {
+            position: absolute;
+            background-color: white;
+            border-radius: 10px;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 10;
+            animation: fadeInOut 5s forwards;
+            transform: translate(-50%, -50%);
+            width: 220px; /* Fixed width */
+            height: 60px; /* Fixed height */
+            box-sizing: border-box;
+        }
+
+        .achievement-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            color: #333;
+            flex-shrink: 0;
+        }
+
+        .achievement-info {
+            display: flex;
+            flex-direction: column;
+            width: 160px; /* Fixed width for text area */
+            overflow: hidden;
+        }
+
+        .achievement-name {
+            font-weight: bold;
+            color: #333;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .achievement-text {
+            color: #666;
+            font-size: 12px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+            10% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+        }
+
+        /* Responsive design */
+        @media (max-width: 1200px) {
+            .left-content {
+                padding-left: 80px;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .main-content {
+                flex-direction: column;
             }
             
-            // Start the typewriter effect
-            setTimeout(type, 1000);
-        });
-    </script>
+            .left-content, 
+            .right-content {
+                width: 100%;
+                padding: 40px;
+                align-items: center;
+                text-align: center;
+            }
+            
+            .left-content {
+                height: 50vh;
+                min-height: 300px;
+            }
+            
+            .right-content {
+                height: 50vh;
+                min-height: 300px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <!-- Inside top-bar div -->
-<div class="top-bar">
-    <a href="/login"><button class="btn">Log In</button></a>
-    <a href="/signup"><button class="btn">Sign Up</button></a>
-</div>
-
-
-    <div class="logo-container">
-        <img src="/static/images/whisp.png" alt="Whisp Logo" class="logo">
+    <!-- Top navigation -->
+    <div class="top-left-logo">
+        <img src="/static/images/whisp text.png" alt="Whisp Text Logo">
     </div>
-
-    <p class="tagline">Where messaging meets efficiency</p>
-
-    <div class="typewriter-container">
-        <span id="typewriter"></span>
+    
+    <div class="top-bar">
+        <a href="{{ url_for('login') }}">
+            <button class="btn">Log In</button>
+        </a>
+        
+        <!-- Button to sign up -->
+        <a href="{{ url_for('signup') }}">
+            <button class="btn">Sign Up</button>
+        </a>
     </div>
+    
+    <!-- Main content -->
+    <div class="main-content">
+        <!-- Left side content -->
+        <div class="left-content">
+            <div class="logo-container">
+                <img src="/static/images/whisp.png" alt="Whisp Logo" class="logo">
+            </div>
+            
+            <div class="tagline">Where messaging meets efficiency</div>
+            
+            <div class="typewriter-container">
+                <span id="typewriter"></span>
+                <span class="cursor"></span>
+            </div>
+        </div>
+        
+        <!-- Right side content -->
+        <div class="right-content">
+            <div class="slides-container">
+                <!-- Messages slide -->
+                <div class="message-slide" id="messageSlide">
+                    <div class="message-bubble incoming" id="message1">
+                        <p>Hey! Have you tried Whisp yet?</p>
+                        <span class="timestamp">10:42 AM</span>
+                    </div>
+                    
+                    <div class="message-bubble outgoing" id="message2">
+                        <p>Just signed up! The interface is so clean!</p>
+                        <span class="timestamp">10:43 AM</span>
+                    </div>
+                    
+                    <div class="message-bubble incoming" id="message3">
+                        <p>It's super secure too. All messages are encrypted end-to-end.</p>
+                        <span class="timestamp">10:44 AM</span>
+                    </div>
+                    
+                    <div class="message-bubble outgoing" id="message4">
+                        <p>Oh yeah, I love it!</p>
+                        <span class="timestamp">10:45 AM</span>
+                    </div>
+                </div>
+                
+                <!-- Globe slide -->
+                <div class="globe-slide hidden-slide" id="globeSlide">
+                    <div class="globe-container">
+                        <div class="rotating-globe" id="rotatingGlobe">
+                            <!-- Globe segments will be added by JavaScript -->
+                        </div>
+                        <div id="achievementsContainer"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Typewriter effect
+        const typewriterElement = document.getElementById('typewriter');
+        const words = ["Secure", "Versatile", "Robust", "Seamless", "Scalable", "Intuitive"];
+        let wordIndex = 0;
+        let charIndex = 0;
+        let isDeleting = false;
+        let typingDelay = 150;
+
+        function typeEffect() {
+            const currentWord = words[wordIndex];
+            
+            if (isDeleting) {
+                // Deleting characters
+                typewriterElement.textContent = currentWord.substring(0, charIndex - 1);
+                charIndex--;
+                typingDelay = 80;
+            } else {
+                // Typing characters
+                typewriterElement.textContent = currentWord.substring(0, charIndex + 1);
+                charIndex++;
+                typingDelay = 150;
+            }
+            
+            // If word is complete
+            if (!isDeleting && charIndex === currentWord.length) {
+                // Pause at end of word
+                typingDelay = 1500;
+                isDeleting = true;
+            }
+            
+            // If deletion is complete
+            if (isDeleting && charIndex === 0) {
+                isDeleting = false;
+                wordIndex = (wordIndex + 1) % words.length;
+            }
+            
+            setTimeout(typeEffect, typingDelay);
+        }
+
+        // Start the typewriter effect
+        setTimeout(typeEffect, 1000);
+        
+        // Message bubbles animation
+        const messages = document.querySelectorAll('.message-bubble');
+        let messageIndex = 0;
+        
+        function animateMessages() {
+            if (messageIndex < messages.length) {
+                messages[messageIndex].classList.add('animate');
+                messageIndex++;
+                setTimeout(animateMessages, 1500);
+            } else {
+                // All messages have been shown, transition to globe after a delay
+                setTimeout(() => {
+                    transitionToGlobe();
+                }, 2000);
+            }
+        }
+        
+        // Start message animations
+        setTimeout(animateMessages, 800);
+        
+        // Create globe segments
+        const rotatingGlobe = document.getElementById('rotatingGlobe');
+        
+        function createGlobeSegments() {
+            for (let i = 0; i < 24; i++) {
+                const segment = document.createElement('div');
+                segment.className = 'globe-segment';
+                
+                // Generate random text for each segment
+                let randomText = '';
+                for (let j = 0; j < 12; j++) {
+                    const char = String.fromCharCode(65 + Math.floor(Math.random() * 26));
+                    const num = Math.floor(Math.random() * 10);
+                    randomText += `${char}${num} `;
+                }
+                
+                segment.textContent = randomText;
+                segment.style.transform = `rotate(${i * 15}deg)`;
+                rotatingGlobe.appendChild(segment);
+            }
+        }
+        
+        // Create globe segments on load
+        createGlobeSegments();
+        
+        // Toggle between slides
+        const messageSlide = document.getElementById('messageSlide');
+        const globeSlide = document.getElementById('globeSlide');
+        let currentSlide = 'messages';
+        
+        function transitionToGlobe() {
+            messageSlide.classList.add('hidden-slide');
+            globeSlide.classList.remove('hidden-slide');
+            currentSlide = 'globe';
+            
+            // Start showing achievements
+            startAchievements();
+        }
+        
+        function transitionToMessages() {
+            messageSlide.classList.remove('hidden-slide');
+            globeSlide.classList.add('hidden-slide');
+            currentSlide = 'messages';
+            
+            // Reset and restart message animations
+            messages.forEach(msg => msg.classList.remove('animate'));
+            messageIndex = 0;
+            setTimeout(animateMessages, 800);
+        }
+        
+        // Auto toggle between slides every 15 seconds
+        setInterval(() => {
+            if (currentSlide === 'messages') {
+                transitionToGlobe();
+            } else {
+                transitionToMessages();
+            }
+        }, 15000);
+        
+        // Achievement animations - modified to ensure only two at a time
+        // Achievement animations - modified to ensure non-overlapping and non-repeating
+const achievementsContainer = document.getElementById('achievementsContainer');
+const possibleAchievements = [
+    { id: 1, name: "Elif Demir", achievement: "Soft girl era of messaging" },
+    { id: 2, name: "Daniel Clark", achievement: "Fast, clean, no BS" },
+    { id: 4, name: "Sofia Rahman", achievement: "Streamlined messaging at its best" },
+    { id: 5, name: "Maya Patel", achievement: "Legit feels like apna adda" },
+];
+
+// Track the active achievement elements (max 2) and last shown achievement
+const activeAchievements = [];
+const maxActiveAchievements = 2;
+let lastAchievementId = null;
+
+function showRandomAchievement() {
+    if (currentSlide !== 'globe') return;
+    
+    // If we already have max achievements showing, don't add more
+    if (activeAchievements.length >= maxActiveAchievements) return;
+    
+    // Get a random achievement that's different from the previous one
+    let randomAchievement;
+    let attempts = 0;
+    
+    do {
+        randomAchievement = possibleAchievements[
+            Math.floor(Math.random() * possibleAchievements.length)
+        ];
+        attempts++;
+    } while (randomAchievement.id === lastAchievementId && attempts < 10);
+    
+    // Update last shown achievement
+    lastAchievementId = randomAchievement.id;
+    
+    const achievementElement = document.createElement('div');
+    achievementElement.className = 'achievement';
+    
+    // Position randomly on the globe, but ensure it's away from other active achievements
+    let top, left;
+    let attemptCount = 0;
+    let validPosition = false;
+    
+    while (!validPosition && attemptCount < 20) {
+        // Generate position between 15% and 80% of container dimensions
+        top = 15 + Math.random() * 65;
+        left = 15 + Math.random() * 65;
+        
+        // Check distance from existing achievements
+        validPosition = true;
+        for (const activeAchievementData of activeAchievements) {
+            const activeTop = parseFloat(activeAchievementData.element.style.top);
+            const activeLeft = parseFloat(activeAchievementData.element.style.left);
+            
+            // Calculate distance between positions (using percentage values)
+            const distance = Math.sqrt(
+                Math.pow(activeTop - top, 2) + 
+                Math.pow(activeLeft - left, 2)
+            );
+            
+            // Minimum separation required (increased from 20 to 30)
+            if (distance < 30) {
+                validPosition = false;
+                break;
+            }
+        }
+        
+        attemptCount++;
+    }
+    
+    // If we couldn't find a valid position after several attempts, use the last generated one
+    achievementElement.style.top = `${top}%`;
+    achievementElement.style.left = `${left}%`;
+    
+    // Create avatar
+    const avatar = document.createElement('div');
+    avatar.className = 'achievement-avatar';
+    avatar.textContent = randomAchievement.name.charAt(0);
+    
+    // Create info container
+    const infoContainer = document.createElement('div');
+    infoContainer.className = 'achievement-info';
+    
+    // Create name and achievement text
+    const nameElement = document.createElement('div');
+    nameElement.className = 'achievement-name';
+    nameElement.textContent = randomAchievement.name;
+    
+    const achievementText = document.createElement('div');
+    achievementText.className = 'achievement-text';
+    achievementText.textContent = randomAchievement.achievement;
+    
+    // Assemble the achievement notification
+    infoContainer.appendChild(nameElement);
+    infoContainer.appendChild(achievementText);
+    achievementElement.appendChild(avatar);
+    achievementElement.appendChild(infoContainer);
+    
+    achievementsContainer.appendChild(achievementElement);
+    
+    // Add to active achievements
+    const achievementData = {
+        element: achievementElement,
+        achievementId: randomAchievement.id,
+        timeoutId: setTimeout(() => {
+            // Remove from DOM and active list
+            if (achievementElement.parentNode === achievementsContainer) {
+                achievementsContainer.removeChild(achievementElement);
+            }
+            
+            // Remove from active achievements array
+            const index = activeAchievements.findIndex(item => item.element === achievementElement);
+            if (index !== -1) {
+                activeAchievements.splice(index, 1);
+            }
+            
+            // Add a new achievement after a short delay to replace this one
+            setTimeout(showRandomAchievement, 500);
+        }, 5000)
+    };
+    
+    activeAchievements.push(achievementData);
+}
+
+function startAchievements() {
+    // Clear any existing achievements
+    achievementsContainer.innerHTML = '';
+    activeAchievements.length = 0;
+    lastAchievementId = null;
+    
+    // Show first achievement immediately
+    showRandomAchievement();
+    
+    // Show second achievement after a delay
+    setTimeout(showRandomAchievement, 2500);
+}
+
+function stopAchievements() {
+    // Clear any active timeouts
+    activeAchievements.forEach(item => {
+        clearTimeout(item.timeoutId);
+    });
+    
+    // Clear the array
+    activeAchievements.length = 0;
+    
+    // Clear the container
+    achievementsContainer.innerHTML = '';
+
+        }
+    </script>
 </body>
 </html>

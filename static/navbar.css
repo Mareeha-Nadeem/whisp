@@ -1,8 +1,12 @@
-/* Slim Left Navbar */
+.logo {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 2rem;
+}
 .slim-navbar {
-  width: 60px; /* Slim width */
-  height: 100vh; /* Full height */
-  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); /* Gradient background */
+  width: 60px;
+  height: 100vh;
+  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
   position: fixed;
   top: 0;
   left: 0;
@@ -12,49 +16,49 @@
   padding-top: 20px;
 }
 
-.slim-navbar .logo {
-  color: white;
-  font-size: 24px;
-  margin-bottom: 40px;
-  font-weight: bold;
-}
-
 .slim-navbar a {
   color: white;
   font-size: 24px;
   margin: 20px 0;
   text-decoration: none;
   display: block;
+  position: relative;
 }
 
-.slim-navbar a:hover {
-  background-color: rgba(255, 255, 255, 0.2);
-  
+.slim-navbar a::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0%;
+  height: 2px;
+  background: linear-gradient(135deg, #82d9ff, #80dfff, #2c5364); /* Add gradient here */
+  transition: width 0.3s ease;
 }
 
-.slim-navbar .material-icons {
-  font-size: 20px;
+
+.slim-navbar a:hover::after,
+.slim-navbar a.active::after {
+  width: 100%;
 }
 
-.slim-navbar a.active {
-  background-color: rgba(255, 255, 255, 0.3); /* Active link highlight */
-}
+
 
 /* Sidebar styling */
 .sidebar {
-  background: linear-gradient(135deg, #203a43, rgba(255,255,255,0.3)); /* Gradient background */
+  background: linear-gradient(135deg, #dbf6ff, rgba(155, 198, 174, 0.3)); /* Gradient background */
   padding: 16px;  /* Padding for spacing */
   margin-left: 60px; /* Left margin for the sidebar */
-  color: white; /* Text color */
+  color: rgb(0, 0, 0); /* Text color */
   height: 100vh; /* Full screen height */
 }
 
 /* Optional: Adjust text color for the sidebar content */
 .sidebar h2 {
-  color: white;
+  color:linear-gradient(135deg, #82d9ff, #80dfff, #2c536479);
 }
 
 .sidebar input {
-  background-color: #203a43;
-  color: white;
+  background-color: #005b79;
+  color: rgb(255, 255, 255) !important;
 }

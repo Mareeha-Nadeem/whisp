@@ -1,94 +1,127 @@
 from datetime import datetime
+from bson import ObjectId            
 from db.mongo_manager import get_db
-from models.user import User  # Importing User class to use for sender/receiver
+from models.user import User
 
 class Chat:
     def __init__(self, sender, receiver, message_body):
         """
-        Initialize the chat object with sender, receiver, and message content.
+        Initialize the chat object with sender, receiver, and content.
         sender and receiver should be User objects.
         """
-        self.sender = sender  # User object for the sender
-        self.receiver = receiver  # User object for the receiver
-        self.message_body = message_body  # The actual message
-        self.timestamp = datetime.utcnow()  # Store the message timestamp
+        self.sender = sender
+        self.receiver = receiver
+        self.message_body = message_body
+        self.timestamp = datetime.utcnow()
 
     def save_to_db(self):
         """
-        Save the message to the database. Only store the user IDs (not the whole User object) for efficiency.
+        Save the message to the database. Initialize read status to False.
         """
         db = get_db()
         chat_data = {
-            "sender_id": self.sender.email,  # Store sender's email or user_id
-            "receiver_id": self.receiver.email,  # Store receiver's email or user_id
+            "sender_id":    self.sender.email,
+            "receiver_id":  self.receiver.email,
             "message_body": self.message_body,
-            "timestamp": self.timestamp
+            "timestamp":    self.timestamp,
+            "is_read":      False,
+            "read_at":      None
         }
-        db.chats.insert_one(chat_data)  # Insert the chat message into MongoDB
-        return "Message sent successfully!"
+        db.chats.insert_one(chat_data)
+        return True
+
+    @staticmethod
+    def delete_message(message_id: str, user_email: str) -> bool:
+        db = get_db()
+        result = db.chats.delete_one({
+            "_id": ObjectId(message_id),
+            "sender_id": user_email
+        })
+        return result.deleted_count == 1
+
+    @staticmethod
+    def edit_message(message_id: str, user_email: str, new_body: str) -> bool:
+        db = get_db()
+        result = db.chats.update_one(
+            {"_id": ObjectId(message_id), "sender_id": user_email},
+            {"$set": {"message_body": new_body, "edited_at": datetime.utcnow()}}
+        )
+        return result.modified_count == 1
 
     @staticmethod
     def get_messages(sender_email, receiver_email):
-        """
-        Retrieve all chat messages between sender and receiver from the database.
-        """
         db = get_db()
         messages = db.chats.find({
             "$or": [
                 {"sender_id": sender_email, "receiver_id": receiver_email},
                 {"sender_id": receiver_email, "receiver_id": sender_email}
             ]
-        }).sort("timestamp", 1)  # Sort by timestamp (ascending order)
+        }).sort("timestamp", 1)
 
-        # Convert each message to include sender and receiver as User objects
         messages_with_user_objects = []
-        for message in messages:
-            sender = User.get_by_email(message["sender_id"])  # Get actual User object
-            receiver = User.get_by_email(message["receiver_id"])  # Get actual User object
-
-            message_data = {
-                "message_body": message["message_body"],
-                "timestamp": message["timestamp"],
+        for m in messages:
+            sender = User.get_by_email(m["sender_id"])
+            receiver = User.get_by_email(m["receiver_id"])
+            messages_with_user_objects.append({
+                "message_body": m["message_body"],
+                "timestamp": m["timestamp"],
                 "sender": sender,
                 "receiver": receiver
-            }
-            messages_with_user_objects.append(message_data)
-
+            })
         return messages_with_user_objects
-    
+
     @staticmethod
-    def get_recent_chats(user_email):
+    def get_recent_chats(current_user_email: str) -> list[dict]:
         """
-        Get a list of recent chats for a specific user.
-        Returns a list of users with their latest message.
+        Retrieve the most recent chat for each conversation partner.
+        Returns a list of dicts with keys: email, username, last_message, last_message_time (datetime).
         """
         db = get_db()
-        
-        # Find all chats where the user is either sender or receiver
-        all_chats = db.chats.find({
+        # Fetch all chats involving the user, sorted by newest first
+        cursor = db.chats.find({
             "$or": [
-                {"sender_id": user_email},
-                {"receiver_id": user_email}
+                {"sender_id": current_user_email},
+                {"receiver_id": current_user_email}
             ]
-        }).sort("timestamp", -1)  # Sort by timestamp (descending order)
-        
-        # Track unique conversations by other user's email
-        recent_chats = {}
-        
-        for chat in all_chats:
-            # Determine the other person in the conversation
-            other_email = chat["receiver_id"] if chat["sender_id"] == user_email else chat["sender_id"]
-            
-            # Only add to recent_chats if we haven't seen this user yet
-            if other_email not in recent_chats:
-                other_user = User.get_by_email(other_email)
-                if other_user:
-                    recent_chats[other_email] = {
-                        "username": other_user.username,
-                        "email": other_email,
-                        "last_message": chat["message_body"],
-                        "last_message_time": chat["timestamp"]
-                    }
-        
-        # Convert dictionary to list for return
-        return list(recent_chats.values())
+        }).sort("timestamp", -1)
+
+        seen = set()
+        recent = []
+        for doc in cursor:
+            # Identify the other participant
+            if doc["sender_id"] == current_user_email:
+                other_email = doc["receiver_id"]
+            else:
+                other_email = doc["sender_id"]
+
+            # Skip if we've already added this partner
+            if other_email in seen:
+                continue
+            seen.add(other_email)
+
+            # Lookup user info
+            user = User.get_by_email(other_email)
+            username = user.username if user else other_email
+
+            recent.append({
+                "email": other_email,
+                "username": username,
+                "last_message": doc["message_body"],
+                "last_message_time": doc["timestamp"]
+            })
+        return recent
+
+    @staticmethod
+    def mark_as_read(message_id: str, reader_email: str) -> bool:
+        db = get_db()
+        res = db.chats.update_one(
+            {"_id": ObjectId(message_id), "receiver_id": reader_email},
+            {"$set": {"is_read": True, "read_at": datetime.utcnow()}}
+        )
+        return res.modified_count == 1
+
+    @staticmethod
+    def get_message_info(message_id: str) -> dict:
+        db = get_db()
+        doc = db.chats.find_one({"_id": ObjectId(message_id)}, {"is_read":1, "read_at":1})
+        return {"is_read": doc.get("is_read", False), "read_at": doc.get("read_at")}

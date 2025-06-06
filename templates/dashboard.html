@@ -9,15 +9,24 @@
     <link href="/static/navbar.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
+        .message-reaction {
+    display: inline-flex;
+    align-items: center;
+    background-color: #f3f4f6;
+    border-radius: 12px;
+    padding: 2px 8px;
+    margin-top: 2px;
+    font-size: 14px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
         #chat-container {
-    min-height: 0;
-}
-#chat-area {
-    overflow-y: auto;
-    flex-grow: 1;
-    min-height: 0;
-}
-
+            min-height: 0;
+        }
+        #chat-area {
+            overflow-y: auto;
+            flex-grow: 1;
+            min-height: 0;
+        }
         .chat-entry {
             padding: 10px;
             border-radius: 8px;
@@ -49,10 +58,83 @@
             text-align: center;
         }
         .welcome-image {
-            width: autopx;
+            width: auto;
             height: 250px;
             margin-bottom: 20px;
         }
+        #msg-context-menu {
+            width: 180px;
+            position: fixed;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: none;
+            z-index: 1000;
+        }
+        #msg-context-menu ul { 
+            margin: 0; 
+            padding: 0; 
+            list-style: none; 
+        }
+        #msg-context-menu li { 
+            padding: 8px 12px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        #msg-context-menu li:hover {
+            background-color: #f3f4f6;
+        }
+        .message-reaction {
+            display: inline-block;
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 2px 5px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            margin-top: 4px;
+        }
+        .reaction-bar {
+    display: flex;
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: white;
+    border-radius: 30px;
+    padding: 5px 10px;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.2);
+    margin-bottom: 8px;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    z-index: 10;
+}
+
+.reaction-bar.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.reaction-btn {
+    font-size: 18px;
+    padding: 4px;
+    margin: 0 3px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.reaction-btn:hover {
+    transform: scale(1.3);
+}
+
+.message-reaction {
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 12px;
+    padding: 2px 6px;
+    margin-top: 5px;
+    display: inline-block;
+    font-size: 12px;
+}
     </style>
 </head>
 <body class="bg-gray-100">
@@ -80,15 +162,14 @@
         </div>
         
         <!-- Sidebar Content -->
-        <div class="sidebar p-4 w-80"> <!-- w-80 sets the width -->
-    <h2 class="text-xl mb-4">Welcome, {{ current_user_name }}!</h2>
-    <input id="search-bar" class="w-full p-2 mb-4 border rounded" type="text" placeholder="Search users..." onkeyup="searchUsers()">
-    <h3 class="text-lg font-medium mb-2">Recent Chats</h3>
-    <ul id="recent-chats" class="space-y-1">
-        <!-- Recent chats will appear here -->
-    </ul>
-</div>
-
+        <div class="sidebar p-4 w-80">
+            <h2 class="text-xl mb-4">Welcome, {{ current_user_name }}!</h2>
+            <input id="search-bar" class="w-full p-2 mb-4 border rounded" type="text" placeholder="Search users..." onkeyup="searchUsers()">
+            <h3 class="text-lg font-medium mb-2">Recent Chats</h3>
+            <ul id="recent-chats" class="space-y-1">
+                <!-- Recent chats will appear here -->
+            </ul>
+        </div>
 
         <!-- Chat Content (Now covers entire remaining screen) -->
         <div class="flex-1 flex flex-col bg-white">
@@ -122,16 +203,86 @@
         </div>
     </div>
 
+    <!-- Hidden field for current user email -->
+    <input type="hidden" id="current-user-email" value="{{ session['user_id'] }}">
+<input type="hidden" id="current-user-name" value="{{ current_user_name }}">
+
+    <!-- Global floating context menu -->
+    <div id="msg-context-menu" class="bg-white rounded-lg shadow-lg">
+    <ul class="py-1">
+        <li class="px-4 py-2 hover:bg-gray-100 flex items-center cursor-pointer" data-action="react">
+            <span class="material-icons text-blue-500 text-sm mr-2">add_reaction</span>
+            React
+        </li>
+        <li class="px-4 py-2 hover:bg-gray-100 flex items-center cursor-pointer" data-action="copy">
+            <span class="material-icons text-blue-500 text-sm mr-2">content_copy</span>
+            Copy
+        </li>
+        <li class="px-4 py-2 hover:bg-gray-100 flex items-center cursor-pointer" data-action="edit" id="edit-option">
+            <span class="material-icons text-blue-500 text-sm mr-2">edit</span>
+            Edit
+        </li>
+        <li class="px-4 py-2 hover:bg-gray-100 flex items-center cursor-pointer" data-action="delete">
+            <span class="material-icons text-red-500 text-sm mr-2">delete</span>
+            Delete
+        </li>
+        <li id="delete-everyone" class="px-4 py-2 hover:bg-gray-100 flex items-center cursor-pointer hidden" data-action="deleteAll">
+            <span class="material-icons text-red-500 text-sm mr-2">delete_forever</span>
+            Delete for Everyone
+        </li>
+    </ul>
+</div>
+
     <script>
         const socket = io.connect();
         let activeReceiverEmail = null;
+        let activeReceiverUsername = null;
+        // const sessionUsername = document.getElementById('current-user-name').value;
+        const sessionUsername = "{{ current_user_name|e }}";
+        const sessionUserEmail = "{{ session['user_id']|e }}";
+        // Socket event handlers
+        socket.on('connect', function() {
+            console.log('Connected to server');
+        });
 
-        // Send message
+        socket.on('new_message', function(data) {
+            // Only show the message if we're in the right chat
+            if (activeReceiverEmail === data.sender_id) {
+                appendMessage(
+  activeReceiverUsername,
+  data.message_body,
+  data.message_id,
+  data.is_delivered,
+  data.is_seen,
+  data.reactions || [],   // ← safe array (even if backend hasn’t sent it yet)
+  data.timestamp
+);
+
+
+                markMessageAsSeen(data.message_id);
+            }
+        });
+
+        socket.on('message_status_update', function(data) {
+            updateMessageStatus(data.message_id, data.is_delivered, data.is_seen);
+        });
+
+        socket.on('message_reaction', function(data) {
+            updateMessageReaction(data.message_id, data.emoji, data.username);
+        });
+
+        // Send message function
         function sendMessage(event) {
             if (event.key === 'Enter') {
                 const message = document.getElementById('message-input').value;
                 if (!activeReceiverEmail || !message.trim()) return;
 
+                // Clear input immediately for better UX
+                document.getElementById('message-input').value = '';
+                
+                // Note: We'll update with the real ID once we get it from the server
+                appendMessage('You', message, null, true, false);
+                
                 fetch('/send_message', {
                     method: 'POST',
                     body: new URLSearchParams({
@@ -141,16 +292,22 @@
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
                 }).then(response => response.json()).then(data => {
                     if (data.success) {
-                        document.getElementById('message-input').value = '';
-                        appendMessage('You', message);
                         // Reload recent chats to update the list with the new message
                         loadRecentChats();
+                        
+                        // If the message ID is returned, update the message element
+                        if (data.message_id) {
+                            const lastMessage = document.querySelector('#chat-area > div:last-child');
+                            if (lastMessage) {
+                                lastMessage.setAttribute('data-message-id', data.message_id);
+                            }
+                        }
                     }
                 });
             }
         }
 
-        // Format the timestamp into a readable format
+        // Format timestamp
         function formatTime(isoString) {
             if (!isoString) return '';
             
@@ -173,33 +330,339 @@
             return date.toLocaleDateString();
         }
 
-        // Append a message to chat area
-        function appendMessage(sender, message) {
-            const chatArea = document.getElementById('chat-area');
-            
-            const messageElement = document.createElement('div');
-            messageElement.className = `mb-3 ${sender === 'You' ? 'text-right' : ''}`;
-            
-            const messageContent = document.createElement('div');
-            messageContent.className = `inline-block p-3 rounded-lg ${sender === 'You' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`;
-            messageContent.textContent = message;
-            
-            messageElement.appendChild(messageContent);
-            chatArea.appendChild(messageElement);
-            chatArea.scrollTop = chatArea.scrollHeight;
-        }
+        // Add message to chat area
+// In your appendMessage function in the HTML file (paste.txt)
+// Update it to handle deleted messages differently:
+function appendMessage(
+  sender,
+  message,
+  messageId = null,
+  isDelivered = true,
+  isSeen = false,
+  reactions = [],       // rename & default to an array
+  isoTimestamp = null
+){   
+const chatArea = document.getElementById('chat-area');
+  const isFromMe = sender === 'You';
+  const wrapper = document.createElement('div');
+  wrapper.className = `mb-0 flex ${isFromMe ? 'justify-end' : 'justify-start'}`;
+  if (messageId) wrapper.setAttribute('data-message-id', messageId);
 
-        // Listen for incoming messages
-        socket.on('new_message', function(data) {
-            if (activeReceiverEmail && (data.sender === activeReceiverEmail || data.receiver === activeReceiverEmail)) {
-                const senderName = data.sender === activeReceiverEmail ? data.sender_name : 'You';
-                appendMessage(senderName, data.message);
-                // Reload recent chats to update the list with the new message
-                loadRecentChats();
+  // build bubble (without reactions in the message bubble)
+  wrapper.innerHTML = `
+    <div class="px-4 py-2 rounded-lg shadow-md relative"
+         style="max-width:80%; background-color: ${isFromMe ? '#DCF8C6' : '#E3F2FD'}; color: #333;">
+      <div class="text-xs font-medium mb-1 ${isFromMe ? 'text-right' : 'text-left'}">${sender}</div>
+      <div class="text-sm break-words">${message}</div>
+      
+      <!-- Add reaction bar for this message -->
+      <div id="reaction-bar-${messageId}" class="reaction-bar">
+        <span class="reaction-btn" onclick="addReaction('${messageId}', '👍')">👍</span>
+        <span class="reaction-btn" onclick="addReaction('${messageId}', '❤️')">❤️</span>
+        <span class="reaction-btn" onclick="addReaction('${messageId}', '😂')">😂</span>
+        <span class="reaction-btn" onclick="addReaction('${messageId}', '😮')">😮</span>
+        <span class="reaction-btn" onclick="addReaction('${messageId}', '😢')">😢</span>
+      </div>
+    </div>
+  `;
+  chatArea.appendChild(wrapper);
+
+  // Add reactions container below the message (Instagram style)
+  if (messageId) {
+    const reactionsContainer = document.createElement('div');
+    reactionsContainer.id = `reactions-container-${messageId}`;
+    reactionsContainer.className = `flex ${isFromMe ? 'justify-end' : 'justify-start'} mb-1`;
+    
+    // If there's an initial reaction, add it
+    
+    if (Array.isArray(reactions) && reactions.length) {
+    reactionsContainer.innerHTML = reactions.map(r =>
+      `<div class="message-reaction">${r.emoji} <span class="text-xs">${r.by}</span></div>`
+    ).join('');
+  }
+    chatArea.appendChild(reactionsContainer);
+  }
+
+  // --- Footer for timestamp + status ---
+  if (isoTimestamp) {
+    const footer = document.createElement('div');
+    footer.className = `flex ${isFromMe ? 'justify-end' : 'justify-start'} text-xs text-gray-500 mt-1 mb-3`;
+    let txt = formatTime(isoTimestamp);
+    if (isFromMe) {
+      const status = isSeen ? 'Seen' : isDelivered ? 'Delivered' : 'Sent';
+      txt += `  ${status}`;
+    }
+    footer.textContent = txt;
+    chatArea.appendChild(footer);
+  }
+
+  // Add event listener for right-click to show context menu
+  if (messageId) {
+    const messageBubble = wrapper.querySelector('.px-4.py-2');
+    messageBubble.addEventListener('contextmenu', function(e) {
+      e.preventDefault(); // Prevent the default context menu
+      showContextMenu(e.pageX, e.pageY, messageId, isFromMe);
+    });
+  }
+
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+let currentFromMe = false;
+        const contextMenu = document.getElementById('msg-context-menu');
+        const deleteEveryone = document.getElementById('delete-everyone');
+function showContextMenu(x, y, msgId, fromMe) {
+    if (!msgId) return;
+    
+    currentMsgId = msgId;
+    currentFromMe = fromMe;
+    
+    // Position the menu
+    contextMenu.style.left = `${x}px`;
+    contextMenu.style.top = `${y}px`;
+    
+    // Show/hide "Delete for Everyone" option
+    if (deleteEveryone) {
+        deleteEveryone.style.display = fromMe ? 'flex' : 'none';
+    }
+    
+    // Show/hide "Edit" option (only for your messages)
+    const editOption = document.getElementById('edit-option');
+    if (editOption) {
+        editOption.style.display = fromMe ? 'flex' : 'none';
+    }
+    
+    // Show the menu
+    contextMenu.style.display = 'block';
+    
+    // Prevent the menu from going off-screen
+    const menuRect = contextMenu.getBoundingClientRect();
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    
+    if (x + menuRect.width > windowWidth) {
+        contextMenu.style.left = `${windowWidth - menuRect.width - 10}px`;
+    }
+    
+    if (y + menuRect.height > windowHeight) {
+        contextMenu.style.top = `${windowHeight - menuRect.height - 10}px`;
+    }
+}     // Hide context menu when clicking elsewhere
+        document.addEventListener('click', function() {
+            contextMenu.style.display = 'none';
+        });
+
+        // Context menu actions
+        contextMenu.addEventListener('click', function(e) {
+            const target = e.target.closest('li');
+            if (!target) return;
+            
+            const action = target.getAttribute('data-action');
+            if (!action) return;
+            
+            contextMenu.style.display = 'none';
+            
+            switch(action) {
+                case 'react':
+                    promptReaction();
+                    break;
+                case 'copy':
+                    copyText();
+                    break;
+                case 'delete':
+                    deleteMsg(false);
+                    break;
+                case 'deleteAll':
+                    deleteMsg(true);
+                    break;
+                    case 'edit':
+    if (currentFromMe) {
+        const messageText = document.querySelector(`[data-message-id="${currentMsgId}"] .text-sm`).textContent;
+        editMessage(currentMsgId, messageText);
+    }
+    break;
             }
         });
 
-        // Search and list users
+        function editMessage(messageId, currentText) {
+    // Create an editable field
+    const messageElement = document.querySelector(`[data-message-id="${messageId}"] .text-sm`);
+    if (!messageElement) return;
+    
+    // Replace with input field
+    const originalContent = messageElement.innerHTML;
+    messageElement.innerHTML = `
+        <input type="text" class="w-full p-1 border rounded" value="${currentText}">
+        <div class="flex justify-end mt-1">
+            <button class="text-xs bg-blue-500 text-white px-2 py-1 rounded mr-1" onclick="saveEdit('${messageId}')">Save</button>
+            <button class="text-xs bg-gray-300 px-2 py-1 rounded" onclick="cancelEdit('${messageId}', '${originalContent.replace(/'/g, "\\'")}')">Cancel</button>
+        </div>
+    `;
+    
+    // Focus on input
+    messageElement.querySelector('input').focus();
+}
+
+function saveEdit(messageId) {
+    const inputField = document.querySelector(`[data-message-id="${messageId}"] input`);
+    if (!inputField) return;
+    
+    const newText = inputField.value.trim();
+    if (!newText) return;
+    
+    fetch('/edit_message', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: new URLSearchParams({
+            message_id: messageId,
+            new_body: newText
+        })
+    }).then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update the message content
+            const messageElement = document.querySelector(`[data-message-id="${messageId}"] .text-sm`);
+            messageElement.innerHTML = newText;
+            
+            // Add edited indicator
+            const statusElement = document.querySelector(`[data-message-id="${messageId}"] .absolute.bottom-1.right-2`);
+            if (statusElement) {
+                const currentStatus = statusElement.textContent;
+                statusElement.innerHTML = `<span class="text-xs italic mr-1">edited</span> ${currentStatus}`;
+            }
+        }
+    });
+}
+
+function cancelEdit(messageId, originalContent) {
+    const messageElement = document.querySelector(`[data-message-id="${messageId}"] .text-sm`);
+    if (messageElement) {
+        messageElement.innerHTML = originalContent;
+    }
+}
+socket.on('message_edited', function(data) {
+    const messageElement = document.querySelector(`[data-message-id="${data.message_id}"] .text-sm`);
+    if (messageElement) {
+        messageElement.innerHTML = data.new_body;
+        
+        // Add edited indicator
+        const messageWrapper = messageElement.closest('[data-message-id]');
+        const statusElement = messageWrapper.querySelector('.absolute.bottom-1.right-2');
+        
+        if (statusElement) {
+            const currentText = statusElement.textContent;
+            if (!currentText.includes('edited')) {
+                statusElement.innerHTML = `<span class="text-xs italic mr-1">edited</span> ${currentText}`;
+            }
+        }
+    }
+});
+        // Reaction handling
+ function promptReaction() {
+    const messageElement = document.querySelector(`[data-message-id="${currentMsgId}"]`);
+    if (!messageElement) return;
+    
+    const reactionBar = document.getElementById(`reaction-bar-${currentMsgId}`);
+    if (reactionBar) {
+        reactionBar.classList.add('visible');
+        
+        // Set a timeout to hide it if no reaction is selected
+        setTimeout(() => {
+            reactionBar.classList.remove('visible');
+        }, 5000);
+    }
+}
+        function addReaction(messageId, emoji) {
+    fetch('/react', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: new URLSearchParams({
+            message_id: messageId,
+            emoji: emoji
+        })
+    }).then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateMessageReaction(messageId, emoji, 'You');
+            // Hide the reaction bar after selecting
+            const reactionBar = document.getElementById(`reaction-bar-${messageId}`);
+            if (reactionBar) reactionBar.classList.remove('visible');
+        }
+    });
+}
+
+function updateMessageReaction(messageId, emoji, username) {
+    const reactionsContainer = document.getElementById(`reactions-container-${messageId}`);
+    if (!reactionsContainer) return;
+    
+    // Update with the new reaction
+    reactionsContainer.innerHTML = `
+        <div class="message-reaction bg-gray-100 text-sm px-2 py-1 rounded-full shadow-sm">
+            ${emoji} <span class="text-xs text-gray-600">${username}</span>
+        </div>
+    `;
+}
+        // Copy message text
+        function copyText() {
+            const message = document.querySelector(`[data-message-id="${currentMsgId}"] .break-words`);
+            if (message) {
+                navigator.clipboard.writeText(message.textContent);
+            }
+        }
+
+        // Delete message
+function deleteMsg(forEveryone) {
+  const url = forEveryone
+    ? `/delete_everyone/${currentMsgId}`
+    : `/delete_message/${currentMsgId}`;
+    
+  fetch(url, {
+    method: forEveryone ? 'POST' : 'DELETE'
+  })
+  .then(res => res.json())
+  .then(data => {
+  if (!data.success) return;
+  const msgWrapper = document.querySelector(`[data-message-id="${currentMsgId}"]`);
+  if (!msgWrapper) return;
+
+  if (forEveryone) {
+  const bodyDiv = msgWrapper.querySelector('.break-words');
+  bodyDiv.textContent = `${sessionUsername} deleted a message`;
+  bodyDiv.style.fontStyle = 'italic';
+  bodyDiv.style.color = '#888';
+  // …and hide context-menu options, etc.
+}
+ else {
+    
+    
+    msgWrapper.remove();
+  }
+});
+}
+
+        // Mark message as seen
+        function markMessageAsSeen(messageId) {
+            fetch(`/mark_message_seen/${messageId}`, {
+                method: 'POST'
+            });
+        }
+
+        // Update message status (delivered/seen)
+        function updateMessageStatus(messageId, isDelivered, isSeen) {
+            const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+            if (!messageElement) return;
+            
+            const statusElement = messageElement.querySelector('.absolute.bottom-1.right-2');
+            if (statusElement) {
+                if (isSeen) {
+                    statusElement.textContent = '👁 Seen';
+                } else if (isDelivered) {
+                    statusElement.textContent = '✓ Delivered';
+                }
+            }
+        }
+
+        // Search users
         function searchUsers() {
             const query = document.getElementById('search-bar').value;
             fetch(`/search_users?query=${query}`)
@@ -207,29 +670,40 @@
                 .then(data => {
                     const recentChats = document.getElementById('recent-chats');
                     recentChats.innerHTML = '';
-                    data.users.forEach(user => {
-                        const userElement = document.createElement('li');
-                        userElement.innerHTML = `
-                            <div class="chat-entry" onclick="openChat('${user.email}', '${user.username}')">
-                                <div class="flex items-center">
-                                    <div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center mr-3">
-                                        <span class="text-gray-600 font-bold">${user.username.charAt(0).toUpperCase()}</span>
-                                    </div>
-                                    <div>
-                                        <div class="font-medium">${user.username}</div>
-                                        <div class="chat-preview">Start a new conversation</div>
+                    
+                    if (data.users && data.users.length > 0) {
+                        data.users.forEach(user => {
+                            const userElement = document.createElement('li');
+                            userElement.innerHTML = `
+                                <div class="chat-entry" onclick="openChat('${user.email}', '${user.username}')">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center mr-3">
+                                            <span class="text-gray-600 font-bold">${user.username.charAt(0).toUpperCase()}</span>
+                                        </div>
+                                        <div>
+                                            <div class="font-medium">${user.username}</div>
+                                            <div class="chat-preview">Start a new conversation</div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            `;
+                            recentChats.appendChild(userElement);
+                        });
+                    } else {
+                        recentChats.innerHTML = `
+                            <li class="text-gray-500 p-2">
+                                No users found. Try a different search term.
+                            </li>
                         `;
-                        recentChats.appendChild(userElement);
-                    });
+                    }
                 });
         }
 
-        // Open chat with selected user
+        // Open chat
         function openChat(email, username) {
             activeReceiverEmail = email;
+            activeReceiverUsername = username;
+            
             updateChatHeader(username);
             
             // Show chat container and hide welcome screen
@@ -240,27 +714,66 @@
             document.getElementById('message-input').disabled = false;
             document.getElementById('send-button').disabled = false;
 
+            // Show loading indicator
+            const chatArea = document.getElementById('chat-area');
+            chatArea.innerHTML = `
+                <div class="flex justify-center items-center h-full">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                </div>
+            `;
+
             fetch(`/get_messages/${email}`)
                 .then(response => response.json())
                 .then(data => {
-                    const chatArea = document.getElementById('chat-area');
                     chatArea.innerHTML = '';
-                    data.messages.forEach(msg => {
-                        const sender = msg.sender_id === email ? username : 'You';
-                        appendMessage(sender, msg.message_body);
-                    });
                     
-                    // Show placeholder if no messages
-                    if (data.messages.length === 0) {
+                    if (!data.messages || data.messages.length === 0) {
                         chatArea.innerHTML = `
                             <div class="flex items-center justify-center h-full text-gray-500">
                                 No messages yet. Start a conversation!
                             </div>
                         `;
+                        return;
                     }
+                    
+                    const currentUserEmail = document.getElementById('current-user-email').value;
+                    
+                    // Process each message
+                    data.messages.forEach(msg => {
+                        // Determine if this message is from the current user or the other person
+                        const isFromCurrentUser = msg.sender_id === currentUserEmail;
+                        const sender = isFromCurrentUser ? 'You' : username;
+                        
+                        // Add the message to the UI with all available properties
+                        appendMessage(
+    sender,
+    msg.message_body,
+    msg._id,
+    msg.is_delivered,
+    msg.is_seen,
+    msg.reactions || [], 
+    msg.timestamp
+  );
+                    });
+                    
+                    // Mark all messages as seen
+                    data.messages.forEach(msg => {
+                        if (msg.sender_id !== currentUserEmail && !msg.is_seen) {
+                            markMessageAsSeen(msg._id);
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching messages:', error);
+                    chatArea.innerHTML = `
+                        <div class="flex items-center justify-center h-full text-red-500">
+                            Error loading messages. Please try again.
+                        </div>
+                    `;
                 });
         }
-        
+
+        // Load recent chats
         function loadRecentChats() {
             fetch('/get_recent_chats')
                 .then(response => response.json())
@@ -310,7 +823,7 @@
             avatarPlaceholder.textContent = username.charAt(0).toUpperCase();
         }
 
-        // Call the function when the page loads
+        // Load recent chats on page load
         window.onload = loadRecentChats;
     </script>
 </body>

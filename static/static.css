@@ -6,6 +6,7 @@
     html, body {
       height: 100%;
       background: url("/static/bg.png") no-repeat center center/cover;
+      
       display: flex; align-items: center; justify-content: center;
     }
     .signup-card {
@@ -21,15 +22,18 @@
     .signup-card h2 {
       text-align: center;
       margin-bottom: 24px;
-      color:  #203a43;
-      font-size: 24px;
+      color:  #feffff;
+      font-family: Candara !important;
+
+      font-weight: 390 !important;  
+      font-size: 30px;
     }
     .input-group { margin-bottom: 18px; }
     .input-group label {
       display: block;
       margin-bottom: 6px;
       font-size: 14px;
-      color:  #203a43;
+      color:  #ffffff;
     }
     .input-group input {
       width: 100%;
@@ -52,8 +56,8 @@
     .btn {
       width: 100%;
       padding: 12px;
-      background: #0077ffe2;
-      color:  #b5e1f0;
+      background: #1574dfe2;
+      color:  #ffffff;
       font-size: 16px;
       border: none;
       border-radius: 8px;
@@ -61,7 +65,7 @@
       transition: background .3s ease;
       margin-top: 8px;
     }
-    .btn:hover { background: #0077a3; }
+    .btn:hover { background: #175f8b; }
     .extra {
       text-align: center;
       margin-top: 16px;
@@ -84,7 +88,7 @@
     .home-icon:hover { background: rgba(0,0,0,0.3); }
     .home-icon svg {
       width: 24px; height: 24px;
-      fill:  #203a43; stroke-width:1;
+      fill:  #f1fbff; stroke-width:1;
     }
     .flash {
       margin-bottom: 16px;
@@ -111,7 +115,25 @@
     .login-card h2 {
       text-align: center;
       margin-bottom: 24px;
-      color: #203a43;
-      font-size: 24px;
+      color:  #feffff;
+      font-family: Candara !important;
+
+      font-weight: 390 !important;  
+      font-size: 30px;
     }
-    
+    /* If you need that little “whisp” shape to have a fixed height */
+
+/* Control the logo’s height to match your heading */
+.whisp-logo {
+  height: 40px;           /* same as .whisp for consistency */
+  width: auto;              /* keep aspect ratio */
+  object-fit: contain;
+margin-left: 2px;
+margin-top: 7px;
+}
+.welcome-heading {
+  margin-left: 1.5rem;
+  display: flex;
+  align-items: center;      /* vertically center everything */
+  gap: 200 px;              /* space between text, icon, logo */
+}
